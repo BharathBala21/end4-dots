@@ -306,6 +306,10 @@ MouseArea {
                         function moveSelection(delta) {
                             currentIndex = Math.max(0, Math.min(grid.model.count - 1, currentIndex + delta));
                             positionViewAtIndex(currentIndex, GridView.Contain);
+                            const currentItem = itemAtIndex(currentIndex);
+                            if (currentItem && currentItem.previewWallpaper) {
+                                currentItem.previewWallpaper();
+                            }
                         }
 
                         function activateCurrent() {
@@ -403,22 +407,27 @@ MouseArea {
                                     Wallpapers.searchQuery = text;
                                 }
 
+                                Keys.priority: Keys.BeforeItem
                                 Keys.onPressed: event => {
                                     if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
                                         root.handleFilePasting(event);
                                         return;
-                                    } else if (text.length !== 0) {
-                                        // No filtering, just navigate grid
-                                        if (event.key === Qt.Key_Down) {
-                                            grid.moveSelection(grid.columns);
-                                            event.accepted = true;
-                                            return;
-                                        }
-                                        if (event.key === Qt.Key_Up) {
-                                            grid.moveSelection(-grid.columns);
-                                            event.accepted = true;
-                                            return;
-                                        }
+                                    } else if (event.key === Qt.Key_Left) {
+                                        grid.moveSelection(-1);
+                                        event.accepted = true;
+                                        return;
+                                    } else if (event.key === Qt.Key_Right) {
+                                        grid.moveSelection(1);
+                                        event.accepted = true;
+                                        return;
+                                    } else if (event.key === Qt.Key_Up) {
+                                        grid.moveSelection(-grid.columns);
+                                        event.accepted = true;
+                                        return;
+                                    } else if (event.key === Qt.Key_Down) {
+                                        grid.moveSelection(grid.columns);
+                                        event.accepted = true;
+                                        return;
                                     }
                                     event.accepted = false;
                                 }

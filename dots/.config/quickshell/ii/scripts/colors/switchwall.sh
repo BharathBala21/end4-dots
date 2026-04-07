@@ -155,6 +155,41 @@ set_thumbnail_path() {
     fi
 }
 
+preview_wallpaper_only() {
+    local imgpath="$1"
+
+    if [[ -z "$imgpath" ]]; then
+        return 0
+    fi
+
+    check_and_prompt_upscale "$imgpath" &
+    kill_existing_mpvpaper
+
+    if is_video "$imgpath"; then
+        mkdir -p "$THUMBNAIL_DIR"
+
+        if command -v mpvpaper &> /dev/null; then
+            while IFS= read -r monitor; do
+                [[ -n "$monitor" ]] || continue
+                mpvpaper -o "$VIDEO_OPTS" "$monitor" "$imgpath" &
+                sleep 0.1
+            done < <(hyprctl monitors -j | jq -r '.[] | .name')
+        fi
+
+        thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
+        if command -v ffmpeg &> /dev/null; then
+            ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null || true
+        fi
+        if [[ -f "$thumbnail" ]]; then
+            set_thumbnail_path "$thumbnail"
+        fi
+    else
+        remove_restore
+    fi
+
+    set_wallpaper_path "$imgpath"
+}
+
 categorize_wallpaper() {
     img_cat=$("$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$1")
     # notify-send "Wallpaper category" "$img_cat"
@@ -167,6 +202,7 @@ switch() {
     type_flag="$3"
     color_flag="$4"
     color="$5"
+    preview_flag="$6"
 
     # Start Gemini auto-categorization if enabled
     aiStylingEnabled=$(jq -r '.background.widgets.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
@@ -253,8 +289,10 @@ switch() {
         else
             matugen_args+=(image "$imgpath")
             generate_colors_material_args=(--path "$imgpath")
-            # Update wallpaper path in config
-            set_wallpaper_path "$imgpath"
+            # Persist the wallpaper path only for committed changes.
+            if [[ -z "$preview_flag" ]]; then
+                set_wallpaper_path "$imgpath"
+            fi
             remove_restore
         fi
     fi
@@ -316,6 +354,11 @@ switch() {
     post_process "$max_width_desired" "$max_height_desired" "$imgpath"
 }
 
+preview() {
+    local imgpath="$1"
+    preview_wallpaper_only "$imgpath"
+}
+
 main() {
     imgpath=""
     mode_flag=""
@@ -323,6 +366,7 @@ main() {
     color_flag=""
     color=""
     noswitch_flag=""
+    preview_flag=""
 
     get_type_from_config() {
         jq -r '.appearance.palette.type' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "auto"
@@ -371,6 +415,10 @@ main() {
             --noswitch)
                 noswitch_flag="1"
                 imgpath=$(jq -r '.background.wallpaperPath' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "")
+                shift
+                ;;
+            --preview)
+                preview_flag="1"
                 shift
                 ;;
             *)
@@ -444,7 +492,11 @@ main() {
         fi
     fi
 
-    switch "$imgpath" "$mode_flag" "$type_flag" "$color_flag" "$color"
+    if [[ -n "$preview_flag" ]]; then
+        preview "$imgpath" "$mode_flag" "$type_flag" "$color_flag" "$color"
+    else
+        switch "$imgpath" "$mode_flag" "$type_flag" "$color_flag" "$color"
+    fi
 }
 
 main "$@"

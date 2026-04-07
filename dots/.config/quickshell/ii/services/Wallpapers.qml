@@ -39,6 +39,10 @@ Singleton {
     Process {
         id: applyProc
     }
+
+    Process {
+        id: previewProc
+    }
     
     function openFallbackPicker(darkMode = Appearance.m3colors.darkmode) {
         applyProc.exec([
@@ -55,6 +59,16 @@ Singleton {
             "--mode", (darkMode ? "dark" : "light")
         ])
         root.changed()
+    }
+
+    function preview(path, darkMode = Appearance.m3colors.darkmode) {
+        if (!path || path.length === 0) return
+        previewProc.exec([
+            Directories.wallpaperSwitchScriptPath,
+            "--image", path,
+            "--mode", (darkMode ? "dark" : "light"),
+            "--preview"
+        ])
     }
 
     Process {

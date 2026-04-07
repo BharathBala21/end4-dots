@@ -22,8 +22,18 @@ MouseArea {
 
     signal activated()
 
+    function previewWallpaper() {
+        if (!root.isDirectory) {
+            Wallpapers.preview(root.fileModelData.filePath, Appearance.m3colors.darkmode)
+        }
+    }
+
     hoverEnabled: true
-    onClicked: root.activated()
+    onClicked: {
+        root.previewWallpaper();
+        root.activated();
+    }
+    onEntered: root.previewWallpaper()
 
     Rectangle {
         id: background
