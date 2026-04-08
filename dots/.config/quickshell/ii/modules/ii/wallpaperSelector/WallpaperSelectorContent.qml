@@ -22,12 +22,12 @@ MouseArea {
         Wallpapers.generateThumbnail(thumbnailSizeName);
     }
 
-    Connections {
-        target: Wallpapers
-        function onDirectoryChanged() {
-            root.updateThumbnails();
-        }
-    }
+    // Connections {
+    //     target: Wallpapers
+    //     function onDirectoryChanged() {
+    //         root.updateThumbnails();
+    //     }
+    // }
 
     function handleFilePasting(event) {
         const currentClipboardEntry = Cliphist.entries[0];
@@ -299,9 +299,9 @@ MouseArea {
                         bottomMargin: extraOptions.implicitHeight
                         ScrollBar.vertical: StyledScrollBar {}
 
-                        Component.onCompleted: {
-                            root.updateThumbnails();
-                        }
+                        // Component.onCompleted: {
+                        //     root.updateThumbnails();
+                        // }
 
                         function moveSelection(delta) {
                             currentIndex = Math.max(0, Math.min(grid.model.count - 1, currentIndex + delta));
@@ -393,6 +393,19 @@ MouseArea {
                                     text: Translation.tr("Click to toggle light/dark mode\n(applied when wallpaper is chosen)")
                                 }
                             }
+
+                            IconToolbarButton {
+                            implicitWidth: height
+                            onClicked:
+                                root.updateThumbnails()  
+                            
+                            text: "refresh"
+                            StyledToolTip {
+                                text: Translation.tr("Update Thumbnails")
+                            }
+                        }
+
+                            
 
                             ToolbarTextField {
                                 id: filterField
