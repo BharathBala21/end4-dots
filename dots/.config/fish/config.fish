@@ -1,3 +1,10 @@
+# Add npm global bin to path
+
+if test -d ~/.npm-global/bin
+    set -gx PATH ~/.npm-global/bin $PATH
+end
+
+
 # Commands to run in interactive sessions can go here
 if status is-interactive
     # No greeting
